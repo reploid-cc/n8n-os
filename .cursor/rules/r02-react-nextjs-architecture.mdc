@@ -1,0 +1,497 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: "Quy tắc thiết kế, tổ chức và phát triển React components và Next.js application, bao gồm các patterns và best practices."
+globs: ["**/*.{tsx,jsx}", "**/components/**", "**/app/**", "**/pages/**"]
+alwaysApply: true
+priority: 1
+tags: ["react", "nextjs", "components", "architecture", "server-components", "app-router"]
+version: "1.0.0"
+---
+
+# R-02: React & Next.js Architecture (Kiến trúc React & Next.js)
+
+> **Priority:** critical  
+> **Category:** framework  
+> **AppliesTo:** React, Next.js  
+
+## What (Là gì)
+
+Quy tắc thiết kế và tổ chức React components cũng như cấu trúc ứng dụng Next.js, bao gồm best practices và patterns.
+
+## Why (Tại sao)
+
+Kiến trúc React & Next.js tốt giúp:
+- Tạo ra components dễ tái sử dụng, test và bảo trì
+- Phân tách rõ ràng giữa logic và UI
+- Tối ưu performance thông qua rendering chiến lược
+- Cải thiện DX (Developer Experience) và tính nhất quán
+- Tận dụng tối đa các tính năng của Next.js App Router
+
+## How (Làm thế nào)
+
+### 1. React Component Architecture
+
+#### Component Categorization
+
+Phân loại components thành các loại rõ ràng:
+
+- **UI Components**: Stateless, presentational (Button, Card, Input)
+- **Container Components**: Quản lý state, data fetching
+- **Layout Components**: Cấu trúc layout (Header, Footer, Sidebar)
+- **Feature Components**: Đặc thù cho từng tính năng
+- **Page Components**: Top-level components cho từng route
+
+#### Component Design Principles
+
+- **Single Responsibility**: Mỗi component chỉ làm một việc
+- **Props Interface**: Định nghĩa rõ ràng prop types
+- **Composability**: Thiết kế components để dễ dàng kết hợp với nhau
+- **Self-containment**: Components chứa mọi thứ cần thiết để hoạt động
+
+```tsx
+// ❌ KHÔNG LÀM THEO CÁCH NÀY (Quá nhiều trách nhiệm)
+function UserCard({ user }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const { addToFavorites } = useFavorites();
+  
+  // Fetch additional data
+  // Handle expansion logic
+  // Manage favorites
+  // Complex UI rendering
+}
+
+// ✅ THEO CÁCH NÀY (Trách nhiệm rõ ràng)
+function UserCard({ user, isExpanded, onExpand, onAddToFavorites }) {
+  return (
+    <Card>
+      <CardHeader
+        title={user.name}
+        action={<ExpandButton isExpanded={isExpanded} onClick={onExpand} />}
+      />
+      <CardContent isExpanded={isExpanded}>
+        <UserDetails user={user} />
+      </CardContent>
+      <CardActions>
+        <FavoriteButton onClick={() => onAddToFavorites(user)} />
+      </CardActions>
+    </Card>
+  );
+}
+```
+
+#### Custom Hooks
+
+- Tách business logic ra khỏi components thành custom hooks
+- Hooks chỉ chứa logic, không chứa UI
+- Hooks tự quản lý state, side effects, và xử lý lỗi
+
+```tsx
+// ✅ THEO CÁCH NÀY (Custom hook)
+function useUserProfile(userId) {
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    let isMounted = true;
+    
+    async function fetchUser() {
+      try {
+        setIsLoading(true);
+        const data = await api.getUser(userId);
+        if (isMounted) {
+          setUser(data);
+          setError(null);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err);
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+    
+    fetchUser();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [userId]);
+  
+  return { user, isLoading, error };
+}
+
+// Sử dụng trong component
+function UserProfile({ userId }) {
+  const { user, isLoading, error } = useUserProfile(userId);
+  
+  if (isLoading) return <Spinner />;
+  if (error) return <ErrorMessage error={error} />;
+  
+  return <UserDetails user={user} />;
+}
+```
+
+#### Component Composition
+
+- Sử dụng composition pattern thay vì prop drilling
+- Truyền children để tái sử dụng layout và behavior
+- Sử dụng Compound Components pattern cho components phức tạp
+
+```tsx
+// ✅ THEO CÁCH NÀY (Composition)
+function Dialog({ title, children, actions }) {
+  return (
+    <DialogContainer>
+      <DialogHeader>{title}</DialogHeader>
+      <DialogContent>{children}</DialogContent>
+      <DialogActions>{actions}</DialogActions>
+    </DialogContainer>
+  );
+}
+
+// Sử dụng
+<Dialog 
+  title="Confirm Action"
+  actions={
+    <>
+      <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+      <Button variant="primary" onClick={onConfirm}>Confirm</Button>
+    </>
+  }
+>
+  <p>Are you sure you want to proceed?</p>
+</Dialog>
+```
+
+### 2. React Optimization
+
+#### Memoization
+
+- Sử dụng `React.memo()` cho components bị render lại không cần thiết
+- Sử dụng `useMemo()` cho expensive calculations
+- Sử dụng `useCallback()` cho function references
+
+```tsx
+// ✅ THEO CÁCH NÀY (Memoization)
+const MemoizedComponent = React.memo(function ExpensiveComponent({ data }) {
+  // Only re-renders when data changes
+  return <div>{/* Complex rendering */}</div>;
+});
+
+function ParentComponent({ items, onItemSelect }) {
+  // Memoize callback to prevent re-creation on each render
+  const handleSelect = useCallback((item) => {
+    onItemSelect(item.id);
+  }, [onItemSelect]);
+  
+  // Memoize expensive calculation
+  const processedItems = useMemo(() => {
+    return items.map(item => processItem(item));
+  }, [items]);
+  
+  return (
+    <div>
+      {processedItems.map(item => (
+        <MemoizedComponent 
+          key={item.id} 
+          data={item} 
+          onSelect={handleSelect}
+        />
+      ))}
+    </div>
+  );
+}
+```
+
+#### Conditional Rendering & Lists
+
+- Sử dụng short-circuit operators (`&&`) và ternary expressions có chọn lọc
+- Luôn dùng `key` prop có ý nghĩa cho lists (không dùng index)
+- Tránh tạo functions mới trong render
+
+```tsx
+// ❌ KHÔNG LÀM THEO CÁCH NÀY (New function on each render)
+function ProductList({ products }) {
+  return (
+    <ul>
+      {products.map((product, index) => (
+        <li key={index} onClick={() => handleClick(product.id)}>
+          {product.name}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// ✅ THEO CÁCH NÀY
+function ProductList({ products, onProductClick }) {
+  return (
+    <ul>
+      {products.map((product) => (
+        <li key={product.id} onClick={() => onProductClick(product.id)}>
+          {product.name}
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+### 3. Next.js App Router Practices
+
+#### Server vs Client Components
+
+- Sử dụng Server Components làm mặc định (React Server Components - RSC)
+- Chỉ sử dụng Client Components khi cần thiết
+- Sử dụng "islands architecture" - client components bọc trong server components
+
+```tsx
+// app/products/page.tsx (Server Component)
+export default async function ProductsPage() {
+  // Fetch directly without useEffect or useState
+  const products = await getProducts();
+  
+  return (
+    <div>
+      <h1>Products</h1>
+      {/* Client Component island */}
+      <ProductFilter products={products} />
+      {/* Server Component */}
+      <ProductList products={products} />
+    </div>
+  );
+}
+
+// components/ProductFilter.tsx (Client Component)
+'use client';
+
+import { useState } from 'react';
+
+export function ProductFilter({ products }) {
+  const [filter, setFilter] = useState('');
+  
+  // Client-side logic for filtering
+  // ...
+  
+  return (
+    <div>
+      <input 
+        type="text" 
+        value={filter} 
+        onChange={(e) => setFilter(e.target.value)} 
+      />
+      {/* Filtered results... */}
+    </div>
+  );
+}
+```
+
+#### Khi nào dùng "use client"
+
+Chỉ dùng "use client" khi cần:
+- Event listeners (onClick, onChange, etc.)
+- State management (useState, useReducer)
+- Browser-only APIs (localStorage, navigator)
+- Custom hooks sử dụng React hooks
+- Class components
+- Context Providers
+
+#### Data Fetching
+
+- Ưu tiên fetch data trong Server Components
+- Sử dụng Suspense và streaming để cải thiện UX
+- Cấu hình fetch caching và revalidation hợp lý
+
+```tsx
+// ✅ THEO CÁCH NÀY (Server Component data fetching)
+export default async function Dashboard() {
+  // Parallel data fetching
+  const [userData, statsData] = await Promise.all([
+    fetchUserData(),
+    fetchStats()
+  ]);
+  
+  return (
+    <DashboardLayout>
+      <UserProfile data={userData} />
+      <Suspense fallback={<StatsSkeleton />}>
+        <Stats data={statsData} />
+      </Suspense>
+    </DashboardLayout>
+  );
+}
+```
+
+#### Routing & Layouts
+
+- Sử dụng cấu trúc thư mục app/ cho routing
+- Tạo layout.tsx cho shared layouts
+- Sử dụng loading.tsx cho Suspense boundaries
+- Sử dụng error.tsx cho Error Boundaries
+
+```
+app/
+├── layout.tsx           # Root layout
+├── page.tsx             # Home page
+├── products/
+│   ├── layout.tsx       # Products layout
+│   ├── page.tsx         # Products list page
+│   ├── loading.tsx      # Loading UI
+│   ├── error.tsx        # Error UI
+│   └── [id]/
+│       └── page.tsx     # Product detail page
+```
+
+#### Route Handlers & Server Actions
+
+- Sử dụng route handlers cho API endpoints
+- Ưu tiên Server Actions cho form submission
+- Sử dụng server actions với 'use server' directive
+
+```tsx
+// app/api/products/route.ts
+export async function GET(request: Request) {
+  const products = await getProducts();
+  return Response.json({ products });
+}
+
+// Server Action trong app/actions.ts
+'use server';
+
+export async function createProduct(formData: FormData) {
+  const name = formData.get('name');
+  const price = formData.get('price');
+  
+  // Server-side validation
+  if (!name || !price) {
+    return { error: 'Missing required fields' };
+  }
+  
+  try {
+    const product = await db.products.create({ name, price });
+    return { success: true, product };
+  } catch (error) {
+    return { error: 'Failed to create product' };
+  }
+}
+
+// Sử dụng trong component
+'use client';
+
+import { createProduct } from '@/app/actions';
+
+export function ProductForm() {
+  return (
+    <form action={createProduct}>
+      <input name="name" />
+      <input name="price" type="number" />
+      <button type="submit">Add Product</button>
+    </form>
+  );
+}
+```
+
+### 4. Props & Component API Design
+
+#### Prop Design
+
+- Prop names rõ ràng, mô tả đúng mục đích
+- Sử dụng destructuring cho props
+- Cung cấp defaultProps cho props không bắt buộc
+- Tránh quá nhiều props (prop drilling)
+
+```tsx
+// ❌ KHÔNG LÀM THEO CÁCH NÀY
+function Button(props) {
+  return (
+    <button 
+      className={props.primary ? 'btn-primary' : 'btn-secondary'}
+      disabled={props.disabled}
+      onClick={props.onClick}
+    >
+      {props.children}
+    </button>
+  );
+}
+
+// ✅ THEO CÁCH NÀY
+function Button({ 
+  variant = 'secondary', 
+  disabled = false, 
+  onClick, 
+  children 
+}) {
+  return (
+    <button 
+      className={`btn-${variant}`}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+```
+
+#### Component API Consistency
+
+- Thiết kế API nhất quán giữa các components liên quan
+- Sử dụng patterns nhất quán cho event handlers (onEvent)
+- Các variants và sizes nhất quán (small, medium, large)
+
+```tsx
+// ✅ THEO CÁCH NÀY (Consistent API)
+// Button.tsx
+function Button({ 
+  variant = 'primary', 
+  size = 'medium', 
+  onClick, 
+  children 
+}) {
+  // ...
+}
+
+// Input.tsx
+function Input({ 
+  variant = 'primary', 
+  size = 'medium', 
+  onChange, 
+  value
+}) {
+  // ...
+}
+```
+
+## Checklist
+
+- [ ] Components được phân loại thành UI, Container, Layout, Feature, Page
+- [ ] Custom hooks được sử dụng để tách logic khỏi UI
+- [ ] Composition được sử dụng thay vì prop drilling
+- [ ] Sử dụng React.memo(), useMemo(), useCallback() cho optimization
+- [ ] Keys có ý nghĩa được sử dụng cho lists
+- [ ] Server Components được sử dụng cho data fetching
+- [ ] Client Components chỉ được sử dụng khi cần thiết
+- [ ] Cấu trúc thư mục app/ tuân thủ conventions của Next.js
+- [ ] Parallel data fetching và streaming được triển khai
+- [ ] Props API nhất quán giữa các components
+- [ ] Server Actions được sử dụng cho form submissions
+- [ ] Các layouts, loading states, và error boundaries được triển khai 
+
+## Liên kết đến các quy tắc khác
+
+- [frontend-master-rule.mdc](mdc:frontend-rule/.cursor/rules/frontend-master-rule.mdc)
+- [r01-code-foundation.mdc](mdc:frontend-rule/.cursor/rules/r01-code-foundation.mdc)
+- [r03-typescript-code-quality.mdc](mdc:frontend-rule/.cursor/rules/r03-typescript-code-quality.mdc)
+- [r04-styling-ui-components.mdc](mdc:frontend-rule/.cursor/rules/r04-styling-ui-components.mdc)
+- [r05-state-data-management.mdc](mdc:frontend-rule/.cursor/rules/r05-state-data-management.mdc)
+- [r06-security-performance.mdc](mdc:frontend-rule/.cursor/rules/r06-security-performance.mdc)
+- [r07-advanced-patterns-ai.mdc](mdc:frontend-rule/.cursor/rules/r07-advanced-patterns-ai.mdc)

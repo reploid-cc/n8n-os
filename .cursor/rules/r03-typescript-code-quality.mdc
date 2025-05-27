@@ -1,0 +1,474 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: "Quy tắc sử dụng TypeScript, testing, code quality và tooling trong dự án frontend. Tập trung vào type safety, static analysis, và best practices."
+globs: ["**/*.{ts,tsx}", "**/tsconfig.json", "**/*.{test,spec}.{ts,tsx}", "**/.eslintrc.*"]
+alwaysApply: true
+priority: 1
+tags: ["typescript", "testing", "linting", "code-quality", "types", "interfaces", "generics"]
+version: "1.0.0"
+---
+
+# R-03: TypeScript & Code Quality (TypeScript & Chất lượng code)
+
+> **Priority:** critical  
+> **Category:** code-quality  
+> **AppliesTo:** TypeScript  
+
+## What (Là gì)
+
+Quy tắc về cách sử dụng TypeScript, kiểm thử (testing), và đảm bảo chất lượng code trong dự án frontend.
+
+## Why (Tại sao)
+
+TypeScript và các công cụ đảm bảo chất lượng code giúp:
+- Bắt lỗi sớm hơn trong quá trình phát triển
+- Tăng tính bền vững và ổn định của code
+- Cải thiện developer experience thông qua autocomplete và type checking
+- Dễ dàng refactor code mà không lo ngại lỗi
+- Giảm thiểu bugs ở production
+
+## How (Làm thế nào)
+
+### 1. TypeScript Configuration
+
+#### tsconfig.json setup
+
+```json
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+```
+
+#### Strict Mode
+
+- Luôn bật `strict: true` trong tsconfig.json
+- Nếu đang migrate từ JavaScript, có thể tạm thời tắt để sau đó bật dần
+
+### 2. Types và Interfaces
+
+#### Interface vs Type
+
+- Sử dụng interface cho objects có thể mở rộng
+- Sử dụng type cho unions, intersections, và primitive types
+- Tránh lạm dụng interface kế thừa phức tạp
+
+```tsx
+// ✅ THEO CÁCH NÀY (Interface for objects)
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+// Extension
+interface AdminUser extends User {
+  permissions: string[];
+}
+
+// ✅ THEO CÁCH NÀY (Type for unions and primitives)
+type Status = 'idle' | 'loading' | 'success' | 'error';
+type ID = string | number;
+type UserWithRole = User & { role: string };
+```
+
+#### Naming Conventions
+
+- Sử dụng PascalCase cho types và interfaces
+- Hậu tố `Props` cho component props
+- Hậu tố `State` cho state types
+- Tiền tố `T` cho generic type parameters
+
+```tsx
+// Props interface
+interface ButtonProps {
+  variant: 'primary' | 'secondary';
+  size?: 'small' | 'medium' | 'large';
+  onClick?: () => void;
+  children: React.ReactNode;
+}
+
+// State type
+type FormState = {
+  values: Record<string, unknown>;
+  errors: Record<string, string[]>;
+  touched: Record<string, boolean>;
+  isSubmitting: boolean;
+};
+
+// Generic
+function createResource<TData, TError = Error>(
+  fetcher: () => Promise<TData>
+): Resource<TData, TError> {
+  // Implementation
+}
+```
+
+#### Utility Types
+
+Sử dụng TypeScript utility types để tạo types dựa trên types có sẵn:
+
+- `Partial<T>`: Làm tất cả properties của T optional
+- `Required<T>`: Làm tất cả properties của T required
+- `Pick<T, K>`: Chọn một tập con của T
+- `Omit<T, K>`: Loại bỏ một tập properties khỏi T
+- `Record<K, T>`: Tạo type với keys kiểu K và values kiểu T
+
+```tsx
+// Original type
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  location?: string;
+}
+
+// Derived types
+type UserCreationParams = Omit<User, 'id'>;
+type UserUpdateParams = Partial<User>;
+type UserPublicData = Pick<User, 'id' | 'name' | 'avatar'>;
+type UsersById = Record<string, User>;
+```
+
+### 3. Generics
+
+- Sử dụng generics cho components và functions có thể tái sử dụng
+- Cung cấp default type parameters khi có thể
+- Giới hạn generics với constraints khi cần thiết
+
+```tsx
+// ✅ THEO CÁCH NÀY (Generic function)
+function fetchData<TData>(url: string): Promise<TData> {
+  return fetch(url).then(res => res.json());
+}
+
+// Usage
+const users = await fetchData<User[]>('/api/users');
+
+// ✅ THEO CÁCH NÀY (Generic component)
+interface SelectProps<TValue> {
+  options: Array<{ label: string; value: TValue }>;
+  value: TValue;
+  onChange: (value: TValue) => void;
+}
+
+function Select<TValue>({ options, value, onChange }: SelectProps<TValue>) {
+  // Implementation
+}
+
+// Usage
+<Select<string>
+  options={[{ label: 'Option 1', value: 'option1' }]}
+  value="option1"
+  onChange={handleChange}
+/>
+```
+
+### 4. Type Safety Best Practices
+
+#### Discriminated Unions
+
+Sử dụng discriminated unions cho state management và error handling:
+
+```tsx
+// ✅ THEO CÁCH NÀY (Discriminated union)
+type RequestState<TData, TError> =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: TData }
+  | { status: 'error'; error: TError };
+
+// Usage
+function UserProfile({ userId }: { userId: string }) {
+  const [state, setState] = useState<RequestState<User, Error>>({ status: 'idle' });
+  
+  useEffect(() => {
+    setState({ status: 'loading' });
+    fetchUser(userId)
+      .then(data => setState({ status: 'success', data }))
+      .catch(error => setState({ status: 'error', error }));
+  }, [userId]);
+  
+  // Type-safe rendering based on state
+  switch (state.status) {
+    case 'idle':
+      return <div>Not started</div>;
+    case 'loading':
+      return <Spinner />;
+    case 'success':
+      return <UserDetails user={state.data} />;
+    case 'error':
+      return <ErrorMessage error={state.error} />;
+  }
+}
+```
+
+#### Non-null Assertion
+
+- Tránh sử dụng non-null assertion operator (`!`) khi có thể
+- Thay vào đó sử dụng optional chaining và nullish coalescing
+
+```tsx
+// ❌ KHÔNG LÀM THEO CÁCH NÀY
+function UserProfile({ user }: { user?: User }) {
+  // This might crash if user is undefined
+  return <div>{user!.name}</div>;
+}
+
+// ✅ THEO CÁCH NÀY
+function UserProfile({ user }: { user?: User }) {
+  if (!user) return null;
+  return <div>{user.name}</div>;
+}
+
+// ✅ HOẶC
+function UserProfile({ user }: { user?: User }) {
+  return <div>{user?.name ?? 'Guest'}</div>;
+}
+```
+
+#### Type Assertions
+
+- Hạn chế dùng type assertions (`as`) khi có thể
+- Nếu cần, nên thêm runtime checks để đảm bảo type safety
+
+```tsx
+// ❌ KHÔNG LÀM THEO CÁCH NÀY
+const userData = JSON.parse(localStorage.getItem('user')) as User;
+
+// ✅ THEO CÁCH NÀY
+function parseUser(data: unknown): User | null {
+  if (!data || typeof data !== 'object') return null;
+  
+  const user = data as Record<string, unknown>;
+  if (
+    typeof user.id === 'string' &&
+    typeof user.name === 'string' &&
+    typeof user.email === 'string'
+  ) {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    };
+  }
+  
+  return null;
+}
+
+const userData = parseUser(JSON.parse(localStorage.getItem('user') || 'null'));
+```
+
+### 5. Testing
+
+#### Jest & React Testing Library
+
+Sử dụng Jest và React Testing Library cho testing:
+
+```tsx
+// Component to test
+function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <div>
+      <span data-testid="count">{count}</span>
+      <button onClick={() => setCount(c => c + 1)}>Increment</button>
+    </div>
+  );
+}
+
+// Test file
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Counter } from './Counter';
+
+describe('Counter', () => {
+  it('renders with initial count of 0', () => {
+    render(<Counter />);
+    expect(screen.getByTestId('count')).toHaveTextContent('0');
+  });
+  
+  it('increments count when button is clicked', () => {
+    render(<Counter />);
+    fireEvent.click(screen.getByText('Increment'));
+    expect(screen.getByTestId('count')).toHaveTextContent('1');
+  });
+});
+```
+
+#### Testing Best Practices
+
+- Test behavior, not implementation
+- Ưu tiên queries theo thứ tự: getByRole > getByLabelText > getByText > getByTestId
+- Sử dụng user-event thay vì fireEvent khi có thể
+- Test edge cases và error states
+- Mock API calls và external dependencies
+
+```tsx
+// ✅ THEO CÁCH NÀY (Testing with user-event)
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { LoginForm } from './LoginForm';
+
+test('submits login form with user credentials', async () => {
+  const user = userEvent.setup();
+  const handleSubmit = jest.fn();
+  
+  render(<LoginForm onSubmit={handleSubmit} />);
+  
+  await user.type(screen.getByLabelText(/email/i), 'user@example.com');
+  await user.type(screen.getByLabelText(/password/i), 'password123');
+  await user.click(screen.getByRole('button', { name: /login/i }));
+  
+  expect(handleSubmit).toHaveBeenCalledWith({
+    email: 'user@example.com',
+    password: 'password123',
+  });
+});
+```
+
+### 6. Linting & Formatting
+
+#### ESLint Configuration
+
+```js
+// .eslintrc.js
+module.exports = {
+  extends: [
+    'next/core-web-vitals',
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:react-hooks/recommended',
+    'plugin:jsx-a11y/recommended',
+  ],
+  plugins: ['@typescript-eslint', 'import'],
+  rules: {
+    // TypeScript specific rules
+    '@typescript-eslint/no-explicit-any': 'error',
+    '@typescript-eslint/explicit-module-boundary-types': 'warn',
+    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    
+    // React rules
+    'react-hooks/rules-of-hooks': 'error',
+    'react-hooks/exhaustive-deps': 'warn',
+    
+    // Import rules
+    'import/order': [
+      'warn',
+      {
+        groups: [
+          'builtin',
+          'external',
+          'internal',
+          'parent',
+          'sibling',
+          'index',
+        ],
+        'newlines-between': 'always',
+      },
+    ],
+  },
+};
+```
+
+#### Prettier Configuration
+
+```js
+// .prettierrc.js
+module.exports = {
+  semi: true,
+  singleQuote: true,
+  trailingComma: 'all',
+  printWidth: 80,
+  tabWidth: 2,
+  arrowParens: 'avoid',
+};
+```
+
+### 7. Documentation
+
+#### JSDoc Comments
+
+Sử dụng JSDoc comments cho functions và interfaces quan trọng:
+
+```tsx
+/**
+ * Fetches user data from the API
+ * @param {string} userId - The user's unique identifier
+ * @returns {Promise<User>} User data object
+ * @throws {ApiError} When the API request fails
+ */
+async function fetchUser(userId: string): Promise<User> {
+  // Implementation
+}
+
+/**
+ * Button component with different variants and sizes
+ * 
+ * @example
+ * <Button variant="primary" size="medium" onClick={handleClick}>
+ *   Click me
+ * </Button>
+ */
+interface ButtonProps {
+  /** The visual style of the button */
+  variant: 'primary' | 'secondary' | 'tertiary';
+  /** The size of the button */
+  size?: 'small' | 'medium' | 'large';
+  /** Handler for click events */
+  onClick?: () => void;
+  /** Button contents */
+  children: React.ReactNode;
+}
+```
+
+## Checklist
+
+- [ ] tsconfig.json được cấu hình với strict mode
+- [ ] Sử dụng interface cho objects và type cho unions/primitives
+- [ ] Utility types được sử dụng khi phù hợp
+- [ ] Generics được sử dụng cho components và functions tái sử dụng
+- [ ] Discriminated unions được sử dụng cho state management
+- [ ] Tránh sử dụng non-null assertion (`!`) và type assertions (`as`)
+- [ ] Jest và React Testing Library được cấu hình
+- [ ] Có unit tests cho components và utility functions
+- [ ] ESLint và Prettier được cấu hình
+- [ ] JSDoc comments cho API và interfaces quan trọng
+
+## Liên kết đến các quy tắc khác
+
+- [frontend-master-rule.mdc](mdc:frontend-rule/.cursor/rules/frontend-master-rule.mdc)
+- [r01-code-foundation.mdc](mdc:frontend-rule/.cursor/rules/r01-code-foundation.mdc)
+- [r02-react-nextjs-architecture.mdc](mdc:frontend-rule/.cursor/rules/r02-react-nextjs-architecture.mdc)
+- [r04-styling-ui-components.mdc](mdc:frontend-rule/.cursor/rules/r04-styling-ui-components.mdc)
+- [r05-state-data-management.mdc](mdc:frontend-rule/.cursor/rules/r05-state-data-management.mdc)
+- [r06-security-performance.mdc](mdc:frontend-rule/.cursor/rules/r06-security-performance.mdc)
+- [r07-advanced-patterns-ai.mdc](mdc:frontend-rule/.cursor/rules/r07-advanced-patterns-ai.mdc)

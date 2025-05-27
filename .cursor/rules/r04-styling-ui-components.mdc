@@ -1,0 +1,486 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: "Quy tắc về styling, UI components và accessibility. Bao gồm Tailwind CSS, CSS Modules, UI frameworks và accessibility best practices."
+globs: ["**/*.{css,scss,sass}", "**/*.{tsx,jsx}", "**/tailwind.config.{js,ts}"]
+alwaysApply: true
+priority: 1
+tags: ["styling", "css", "tailwind", "ui", "theming", "design-system", "accessibility"]
+version: "1.0.0"
+---
+
+# R-04: Styling & UI Components (Styling & UI Components)
+
+> **Priority:** important  
+> **Category:** ui  
+> **AppliesTo:** React, Next.js  
+
+## What (Là gì)
+
+Quy tắc về styling, UI components và accessibility trong dự án React và Next.js. Bao gồm Tailwind CSS, CSS Modules, UI frameworks và các best practices cho giao diện người dùng.
+
+## Why (Tại sao)
+
+Styling và UI components tốt giúp:
+- Tạo ra UI nhất quán và dễ bảo trì
+- Cải thiện UX và khả năng truy cập (accessibility)
+- Tối ưu hóa hiệu suất và thời gian tải trang
+- Dễ dàng scale UI khi dự án phát triển
+- Giảm thiểu duplicated code và cải thiện tái sử dụng
+
+## How (Làm thế nào)
+
+### 1. CSS Methodology
+
+#### Tailwind CSS
+
+- Ưu tiên sử dụng Tailwind CSS cho utility-first styling
+- Tuân thủ mobile-first approach
+- Tạo custom design system trong tailwind.config.js
+
+```tsx
+// tailwind.config.js
+module.exports = {
+  content: ['./src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          // ...
+          900: '#0c4a6e',
+        },
+        secondary: {
+          // ...
+        },
+      },
+      spacing: {
+        // ...
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        // ...
+      },
+    },
+  },
+  plugins: [
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
+  ],
+};
+```
+
+#### CSS Modules
+
+- Sử dụng CSS Modules cho component-specific styling khi cần
+- Tuân thủ BEM naming convention cho class names
+- Đặt file CSS Module cùng thư mục với component
+
+```tsx
+// Button.module.css
+.button {
+  /* Base styles */
+}
+
+.button__primary {
+  /* Primary variant */
+}
+
+.button__secondary {
+  /* Secondary variant */
+}
+
+.button--large {
+  /* Large size */
+}
+
+// Button.tsx
+import styles from './Button.module.css';
+import clsx from 'clsx';
+
+export function Button({ variant = 'primary', size = 'medium', children }) {
+  return (
+    <button
+      className={clsx(
+        styles.button,
+        variant === 'primary' ? styles.button__primary : styles.button__secondary,
+        size === 'large' && styles.button--large
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+```
+
+#### CSS-in-JS (styled-components, emotion)
+
+- Chỉ sử dụng CSS-in-JS nếu có nhu cầu đặc biệt (như dynamic styling dựa trên props)
+- Ưu tiên styled-components hoặc emotion
+- Tách styled components thành file riêng để tránh file quá lớn
+
+```tsx
+// Button.styles.ts
+import styled from 'styled-components';
+
+export const ButtonBase = styled.button`
+  /* Base styles */
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+`;
+
+export const PrimaryButton = styled(ButtonBase)`
+  background-color: ${props => props.theme.colors.primary};
+  color: white;
+  
+  &:hover {
+    background-color: ${props => props.theme.colors.primaryDark};
+  }
+`;
+
+// Button.tsx
+import { PrimaryButton } from './Button.styles';
+
+export function Button({ children, ...props }) {
+  return <PrimaryButton {...props}>{children}</PrimaryButton>;
+}
+```
+
+### 2. UI Component Libraries
+
+#### Shadcn UI / Radix UI
+
+- Ưu tiên sử dụng Shadcn UI và Radix UI cho accessible component primitives
+- Customize components theo design system của dự án
+- Sử dụng composition pattern để mở rộng components
+
+```tsx
+// Shadcn UI Button with custom styling
+import { Button } from "@/components/ui/button";
+
+export function PrimaryActionButton({ children, ...props }) {
+  return (
+    <Button 
+      className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+      {...props}
+    >
+      {children}
+    </Button>
+  );
+}
+```
+
+#### Component Design System
+
+- Xây dựng component design system nhất quán
+- Tài liệu hóa components với Storybook
+- Tạo component variants và sizes nhất quán
+
+```tsx
+// components/ui/button/Button.tsx
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
+
+const buttonVariants = cva(
+  'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+  {
+    variants: {
+      variant: {
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+        outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        link: 'text-primary underline-offset-4 hover:underline',
+      },
+      size: {
+        default: 'h-10 px-4 py-2',
+        sm: 'h-9 rounded-md px-3',
+        lg: 'h-11 rounded-md px-8',
+        icon: 'h-10 w-10',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+      size: 'default',
+    },
+  }
+);
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+}
+
+export function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  ...props
+}: ButtonProps) {
+  return (
+    <button
+      className={cn(buttonVariants({ variant, size }), className)}
+      {...props}
+    />
+  );
+}
+```
+
+### 3. Theming & Dark Mode
+
+#### Theme Configuration
+
+- Xây dựng hệ thống theme với CSS variables
+- Đảm bảo tất cả colors, spacing, typography đều được định nghĩa trong theme
+- Sử dụng semantic naming (primary, secondary, accent, etc.)
+
+```css
+/* global.css */
+:root {
+  /* Light theme variables */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  /* Dark theme variables */
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  /* ... */
+}
+```
+
+#### Dark Mode Implementation
+
+- Sử dụng next-themes cho Next.js dark mode
+- Đảm bảo tất cả components đều respects dark mode
+- Thêm user preference toggle
+
+```tsx
+// _app.tsx
+import { ThemeProvider } from 'next-themes';
+
+function MyApp({ Component, pageProps }) {
+  return (
+    <ThemeProvider attribute="class" defaultTheme="system">
+      <Component {...pageProps} />
+    </ThemeProvider>
+  );
+}
+
+// components/ThemeToggle.tsx
+import { useTheme } from 'next-themes';
+import { SunIcon, MoonIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+export function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      aria-label="Toggle theme"
+    >
+      <SunIcon className="h-5 w-5 rotate-0 scale-100 transition-all dark:rotate-90 dark:scale-0" />
+      <MoonIcon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+    </Button>
+  );
+}
+```
+
+### 4. Responsive Design
+
+#### Mobile-First Approach
+
+- Luôn thiết kế cho mobile trước, sau đó mở rộng cho tablet và desktop
+- Sử dụng Tailwind breakpoints (sm, md, lg, xl, 2xl)
+- Tránh hardcode pixel values
+
+```tsx
+// ✅ THEO CÁCH NÀY (Mobile-first)
+<div className="p-4 md:p-6 lg:p-8">
+  <h1 className="text-xl md:text-2xl lg:text-3xl">Responsive Heading</h1>
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {/* Cards */}
+  </div>
+</div>
+```
+
+#### Fluid Typography & Spacing
+
+- Sử dụng fluid typography và spacing để responsive smooth hơn
+- Sử dụng clamp() hoặc Tailwind plugins
+
+```css
+/* global.css - Fluid typography example */
+h1 {
+  font-size: clamp(1.5rem, 5vw, 3rem);
+}
+
+.container {
+  padding: clamp(1rem, 5vw, 2rem);
+}
+```
+
+### 5. Accessibility (a11y)
+
+#### WCAG Compliance
+
+- Tuân thủ Web Content Accessibility Guidelines (WCAG) 2.1 AA
+- Sử dụng semantic HTML
+- Đảm bảo keyboard navigation
+- Cung cấp text alternatives cho non-text content
+
+```tsx
+// ❌ KHÔNG LÀM THEO CÁCH NÀY
+<div className="button" onClick={handleClick}>Click me</div>
+
+// ✅ THEO CÁCH NÀY
+<button 
+  className="button" 
+  onClick={handleClick}
+  aria-label="Submit form"
+>
+  Click me
+</button>
+```
+
+#### ARIA Attributes
+
+- Sử dụng ARIA attributes khi cần thiết
+- Sử dụng aria-label, aria-labelledby, aria-describedby cho elements không có visible text
+- Sử dụng aria-hidden cho decorative elements
+
+```tsx
+// ✅ THEO CÁCH NÀY
+<button aria-label="Close dialog" onClick={closeDialog}>
+  <svg aria-hidden="true" className="w-4 h-4">
+    {/* X icon */}
+  </svg>
+</button>
+
+<div role="dialog" aria-labelledby="dialog-title" aria-describedby="dialog-desc">
+  <h2 id="dialog-title">Confirm Action</h2>
+  <p id="dialog-desc">Are you sure you want to delete this item?</p>
+  {/* Dialog content */}
+</div>
+```
+
+#### Color Contrast
+
+- Đảm bảo đủ color contrast ratio (4.5:1 cho normal text, 3:1 cho large text)
+- Không chỉ dựa vào màu sắc để truyền đạt thông tin
+- Test với color blindness simulators
+
+#### Focus Management
+
+- Luôn có focus styles rõ ràng
+- Quản lý focus trong modals và dialogs
+- Sử dụng focus traps khi cần thiết
+
+```tsx
+// global.css
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+// FocusTrap component
+import { useRef, useEffect } from 'react';
+
+export function FocusTrap({ children }) {
+  const trapRef = useRef(null);
+  
+  useEffect(() => {
+    const trapElement = trapRef.current;
+    if (!trapElement) return;
+    
+    const focusableElements = trapElement.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    
+    function handleKeyDown(e) {
+      if (e.key !== 'Tab') return;
+      
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          lastElement.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          firstElement.focus();
+          e.preventDefault();
+        }
+      }
+    }
+    
+    trapElement.addEventListener('keydown', handleKeyDown);
+    firstElement.focus();
+    
+    return () => {
+      trapElement.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+  
+  return <div ref={trapRef}>{children}</div>;
+}
+```
+
+## Checklist
+
+- [ ] Tailwind CSS được cấu hình với custom design system
+- [ ] Mobile-first approach được áp dụng
+- [ ] Component design system nhất quán được xây dựng
+- [ ] Dark mode được triển khai
+- [ ] Semantic HTML được sử dụng
+- [ ] Đủ color contrast ratio
+- [ ] Keyboard navigation được hỗ trợ
+- [ ] ARIA attributes được sử dụng đúng cách
+- [ ] Components đều accessible
+- [ ] Focus management được triển khai đúng cách 
+
+## Liên kết đến các quy tắc khác
+
+- [frontend-master-rule.mdc](mdc:frontend-rule/.cursor/rules/frontend-master-rule.mdc)
+- [r01-code-foundation.mdc](mdc:frontend-rule/.cursor/rules/r01-code-foundation.mdc)
+- [r02-react-nextjs-architecture.mdc](mdc:frontend-rule/.cursor/rules/r02-react-nextjs-architecture.mdc)
+- [r03-typescript-code-quality.mdc](mdc:frontend-rule/.cursor/rules/r03-typescript-code-quality.mdc)
+- [r05-state-data-management.mdc](mdc:frontend-rule/.cursor/rules/r05-state-data-management.mdc)
+- [r06-security-performance.mdc](mdc:frontend-rule/.cursor/rules/r06-security-performance.mdc)
+- [r07-advanced-patterns-ai.mdc](mdc:frontend-rule/.cursor/rules/r07-advanced-patterns-ai.mdc)

@@ -1,0 +1,340 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: "Nguyên tắc cốt lõi về phong cách phát triển, giải quyết vấn đề, cấu trúc dự án và quy tắc đặt tên trong dự án frontend."
+globs: ["**/*.{ts,tsx,js,jsx}", "**/*.{json,md}", "**/src/**"]
+alwaysApply: true
+priority: 1
+tags: ["core", "principles", "project-structure", "naming-conventions", "clean-code"]
+version: "1.0.0"
+---
+
+# R-01: Code Foundation (Nền tảng & Cấu trúc)
+
+> **Priority:** critical  
+> **Category:** core  
+> **AppliesTo:** All  
+
+## What (Là gì)
+
+Nguyên tắc cốt lõi về cách viết code, cấu trúc dự án, và quy tắc đặt tên trong phát triển frontend.
+
+## Why (Tại sao)
+
+Code foundation vững chắc giúp:
+- Đảm bảo code sạch, dễ bảo trì, mở rộng và có tính nhất quán cao
+- Dễ dàng tìm kiếm và điều hướng codebase
+- Tăng khả năng tái sử dụng code
+- Giảm thiểu xung đột khi merge code
+- Tạo điều kiện cho việc onboard thành viên mới
+
+## How (Làm thế nào)
+
+### 1. Nguyên tắc lập trình
+
+#### Functional & Declarative Programming
+
+- Ưu tiên functional components và hooks thay vì class components
+- Tránh side effects không cần thiết
+- Sử dụng pure functions khi có thể
+
+```tsx
+// ❌ KHÔNG LÀM THEO CÁCH NÀY (Class component)
+class UserProfile extends React.Component {
+  state = { user: null, loading: true }
+  
+  componentDidMount() {
+    fetchUser(this.props.id).then(user => {
+      this.setState({ user, loading: false })
+    })
+  }
+  
+  render() {
+    if (this.state.loading) return <Spinner />
+    return <div>{this.state.user.name}</div>
+  }
+}
+
+// ✅ THEO CÁCH NÀY (Functional component)
+function UserProfile({ id }) {
+  const { data: user, isLoading } = useQuery(['user', id], () => fetchUser(id))
+  
+  if (isLoading) return <Spinner />
+  return <div>{user.name}</div>
+}
+```
+
+#### Modular Architecture
+
+- Chia code thành các module nhỏ, dễ bảo trì
+- Mỗi component chỉ làm một việc (Single Responsibility)
+- Tách logic thành các custom hooks
+
+```tsx
+// ❌ KHÔNG LÀM THEO CÁCH NÀY (Quá nhiều trách nhiệm)
+function ProductPage() {
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [cart, setCart] = useState([])
+  
+  // Fetch products
+  // Handle cart
+  // Sort & filter products
+  // Render UI
+}
+
+// ✅ THEO CÁCH NÀY (Tách nhỏ trách nhiệm)
+function ProductPage() {
+  const { products, isLoading, error } = useProducts()
+  const { cart, addToCart } = useCart()
+  
+  if (isLoading) return <ProductSkeleton />
+  if (error) return <ErrorMessage error={error} />
+  
+  return <ProductList products={products} onAddToCart={addToCart} />
+}
+```
+
+#### DRY (Don't Repeat Yourself)
+
+- Tránh duplicate code bằng cách tạo shared components và utilities
+- Extract common patterns thành reusable hooks và functions
+- Sử dụng composition pattern để tái sử dụng UI logic
+
+#### Bất Biến (Immutability)
+
+- Không mutate trực tiếp state
+- Sử dụng spread operator, Array.map(), filter() thay vì mutating methods
+- Tránh side effects không cần thiết
+
+```tsx
+// ❌ KHÔNG LÀM THEO CÁCH NÀY (Mutate state)
+function addItem(item) {
+  const newCart = cart;
+  newCart.push(item);
+  setCart(newCart);
+}
+
+// ✅ THEO CÁCH NÀY (Immutable update)
+function addItem(item) {
+  setCart([...cart, item]);
+}
+```
+
+### 2. Cấu trúc thư mục
+
+```
+src/
+├── app/                   # App Router (Next.js)
+│   ├── (auth)/            # Grouped routes
+│   ├── api/               # API routes
+│   └── layout.tsx         # Root layout
+├── components/            # Shared components
+│   ├── ui/                # Base UI components
+│   ├── forms/             # Form-related components
+│   ├── layout/            # Layout components
+│   └── [feature]/         # Feature-specific components
+├── hooks/                 # Custom React hooks
+├── lib/                   # Utilities and helpers
+├── contexts/              # React context providers
+├── services/              # API service layer
+├── styles/                # Global styles
+├── types/                 # TypeScript type definitions
+└── utils/                 # Utility functions
+```
+
+#### Quy tắc tổ chức thư mục:
+
+- **Thư mục**: Sử dụng `kebab-case` (ví dụ: `user-auth`, `data-table`)
+- **Cấu trúc phân cấp**: Ưu tiên cấu trúc phẳng, nhưng nhóm các file liên quan
+- **Feature-based**: Sắp xếp code theo tính năng thay vì loại file
+
+### 3. Quy tắc đặt tên file
+
+#### Component Files
+
+```
+components/
+├── Button/
+│   ├── Button.tsx         # Implementation
+│   ├── Button.test.tsx    # Tests
+│   ├── Button.styles.ts   # Styles (if not using Tailwind)
+│   └── index.ts           # Re-export
+```
+
+- **Thành phần chính**: `ComponentName.tsx`
+- **Các file phụ**: `ComponentName.test.tsx`, `ComponentName.stories.tsx`
+- **File xuất**: `index.ts` (re-export để sử dụng `import { Button } from '@/components/Button'`)
+
+#### Quy tắc đặt tên file:
+
+- **Components**: `PascalCase.tsx` (ví dụ: `UserProfile.tsx`)
+- **Hooks**: `useHookName.ts` (ví dụ: `useAuth.ts`)
+- **Contexts**: `FooContext.tsx` (ví dụ: `AuthContext.tsx`)
+- **Utils/Services**: `camelCase.ts` (ví dụ: `dateFormatter.ts`)
+- **Constants**: `UPPER_SNAKE_CASE.ts` (ví dụ: `API_ENDPOINTS.ts`)
+
+### 4. Exports và Imports
+
+#### Ưu tiên named exports
+
+```tsx
+// ❌ KHÔNG LÀM THEO CÁCH NÀY
+export default function Button() { /* ... */ }
+
+// ✅ THEO CÁCH NÀY
+export function Button() { /* ... */ }
+```
+
+#### Barrel exports cho thư mục
+
+```tsx
+// components/ui/index.ts
+export * from './Button';
+export * from './Card';
+export * from './Input';
+```
+
+#### Tổ chức imports
+
+```tsx
+// 1. External libraries
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+
+// 2. Internal modules
+import { Card } from '@/components/ui';
+import { useAuth } from '@/hooks/useAuth';
+
+// 3. Types
+import type { User } from '@/types';
+
+// 4. Styles (if needed)
+import './styles.css';
+```
+
+### 5. Naming Conventions
+
+#### Biến và Functions
+
+- **Variables**: `camelCase` (ví dụ: `userName`, `isLoading`)
+- **Functions**: `camelCase` (ví dụ: `handleSubmit`, `fetchData`)
+- **Boolean**: prefix với `is`, `has`, `should` (ví dụ: `isActive`, `hasPermission`)
+- **Event Handlers**: prefix với `handle` hoặc `on` (ví dụ: `handleClick`, `onSubmit`)
+
+```tsx
+// ❌ KHÔNG LÀM THEO CÁCH NÀY
+const loading = true;
+function click() { /* ... */ }
+
+// ✅ THEO CÁCH NÀY
+const isLoading = true;
+function handleClick() { /* ... */ }
+```
+
+#### Components và Types
+
+- **Components**: `PascalCase` (ví dụ: `UserProfile`, `ProductCard`)
+- **Interfaces/Types**: `PascalCase` (ví dụ: `UserProps`, `ProductData`)
+- **Generics**: `T` prefix hoặc ý nghĩa rõ ràng (ví dụ: `TItem`, `TValue`)
+
+```tsx
+// ❌ KHÔNG LÀM THEO CÁCH NÀY
+type props = { /* ... */ }
+function userCard() { /* ... */ }
+
+// ✅ THEO CÁCH NÀY
+type UserCardProps = { /* ... */ }
+function UserCard() { /* ... */ }
+```
+
+#### Constants
+
+- **Constants**: `UPPERCASE_SNAKE_CASE` (ví dụ: `MAX_RETRY_COUNT`, `API_URL`)
+- **Enum Values**: `PascalCase` hoặc `UPPERCASE_SNAKE_CASE` (tùy ngữ cảnh)
+
+### 6. Tổ chức code trong file
+
+- **Imports** ở trên cùng
+- **Types/Interfaces** tiếp theo
+- **Constants** và helper functions
+- **Component** chính
+- **Exports** ở cuối
+
+```tsx
+// Imports
+import { useState } from 'react';
+import { Button } from '@/components/ui';
+
+// Types
+interface CardProps {
+  title: string;
+  children: React.ReactNode;
+}
+
+// Constants
+const ANIMATION_DURATION = 300;
+
+// Component
+export function Card({ title, children }: CardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Implementation...
+  
+  return (
+    <div>
+      <h2>{title}</h2>
+      {children}
+    </div>
+  );
+}
+```
+
+### 7. Code Style
+
+#### Formatting
+
+- Sử dụng 2 space indentation
+- Sử dụng single quotes cho strings
+- Spaces around operators
+- Spaces sau commas
+- No semicolons (trừ khi cần thiết để tránh ambiguity)
+- Ưu tiên sử dụng early returns và guard clauses
+
+```tsx
+// ✅ THEO CÁCH NÀY (Early returns)
+function processUser(user) {
+  if (!user) return null
+  if (!user.isActive) return <InactiveUser user={user} />
+  
+  // Happy path
+  return <ActiveUser user={user} />
+}
+```
+
+## Checklist
+
+- [ ] Thư mục và file được tổ chức theo cấu trúc đã định nghĩa
+- [ ] Các file và thư mục được đặt tên đúng convention
+- [ ] Component sử dụng named exports thay vì default exports
+- [ ] Imports được tổ chức theo thứ tự hợp lý
+- [ ] Biến, functions, types và constants tuân thủ naming conventions
+- [ ] Code trong file được tổ chức rõ ràng theo thứ tự logic
+- [ ] Sử dụng functional components thay vì class
+- [ ] Logic nghiệp vụ đã được tách thành các custom hooks
+- [ ] Tránh duplicate code thông qua abstraction phù hợp
+- [ ] State được cập nhật theo cách immutable 
+
+## Liên kết đến các quy tắc khác
+
+- [frontend-master-rule.mdc](mdc:frontend-rule/.cursor/rules/frontend-master-rule.mdc)
+- [r02-react-nextjs-architecture.mdc](mdc:frontend-rule/.cursor/rules/r02-react-nextjs-architecture.mdc)
+- [r03-typescript-code-quality.mdc](mdc:frontend-rule/.cursor/rules/r03-typescript-code-quality.mdc)
+- [r04-styling-ui-components.mdc](mdc:frontend-rule/.cursor/rules/r04-styling-ui-components.mdc)
+- [r05-state-data-management.mdc](mdc:frontend-rule/.cursor/rules/r05-state-data-management.mdc)
+- [r06-security-performance.mdc](mdc:frontend-rule/.cursor/rules/r06-security-performance.mdc)
+- [r07-advanced-patterns-ai.mdc](mdc:frontend-rule/.cursor/rules/r07-advanced-patterns-ai.mdc)

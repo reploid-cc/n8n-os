@@ -1,0 +1,291 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: "Quy tắc về advanced patterns, AI integration và các techniques chuyên biệt cho dự án frontend. Bao gồm patterns cho các use cases phức tạp và cách tích hợp AI vào ứng dụng React và Next.js."
+globs: ["**/*.{tsx,jsx,ts,js}", "**/ai/**", "**/patterns/**"]
+alwaysApply: false
+priority: 2
+tags: ["advanced-patterns", "ai", "extensions", "specialized", "optimization", "integration"]
+version: "1.0.0"
+---
+
+# R-07: Advanced Patterns & AI (Advanced Patterns & AI)
+
+> **Priority:** nice-to-have  
+> **Category:** advanced  
+> **AppliesTo:** Project-specific  
+
+## What (Là gì)
+
+Quy tắc về advanced React patterns, AI integration, và các techniques chuyên biệt cho dự án frontend. Bao gồm các patterns cho use cases phức tạp và cách tích hợp AI vào ứng dụng React và Next.js.
+
+## Why (Tại sao)
+
+Advanced patterns và AI integration giúp:
+- Giải quyết các use cases phức tạp một cách elegant
+- Tận dụng công nghệ AI để nâng cao UX
+- Mở rộng khả năng của ứng dụng với các tính năng thông minh
+- Tạo ra các abstractions mạnh mẽ và tái sử dụng
+- Xây dựng UI phức tạp với codebase dễ bảo trì
+
+## How (Làm thế nào)
+
+### 1. Advanced React Patterns
+
+#### Compound Components
+
+- Tạo components với API linh hoạt và expressive
+- Sử dụng React.Children và React.cloneElement
+- Tạo multiple components hoạt động cùng nhau
+
+```tsx
+// ✅ THEO CÁCH NÀY (Compound Components)
+function Tabs({ children, defaultTab }) {
+  const [activeTab, setActiveTab] = useState(defaultTab || '');
+  
+  return (
+    <TabsContext.Provider value={{ activeTab, setActiveTab }}>
+      <div className="tabs-container">{children}</div>
+    </TabsContext.Provider>
+  );
+}
+
+function Tab({ id, children }) {
+  const { activeTab, setActiveTab } = useTabsContext();
+  const isActive = activeTab === id;
+  
+  return (
+    <button 
+      className={`tab ${isActive ? 'active' : ''}`}
+      onClick={() => setActiveTab(id)}
+    >
+      {children}
+    </button>
+  );
+}
+
+// Combine components
+Tabs.List = TabList;
+Tabs.Tab = Tab;
+Tabs.Panels = TabPanels;
+Tabs.Panel = TabPanel;
+
+// Usage
+function ProductTabs() {
+  return (
+    <Tabs defaultTab="details">
+      <Tabs.List>
+        <Tabs.Tab id="details">Details</Tabs.Tab>
+        <Tabs.Tab id="specs">Specifications</Tabs.Tab>
+      </Tabs.List>
+      <Tabs.Panels>
+        <Tabs.Panel id="details">
+          <ProductDetails />
+        </Tabs.Panel>
+        <Tabs.Panel id="specs">
+          <ProductSpecs />
+        </Tabs.Panel>
+      </Tabs.Panels>
+    </Tabs>
+  );
+}
+```
+
+#### Render Props & Custom Hooks Factory
+
+- Truyền render functions như props
+- Tạo hook factories để customize hooks
+- Sử dụng closures để persist configuration
+
+```tsx
+// ✅ THEO CÁCH NÀY (Render Props)
+function DataFetcher({ url, render }) {
+  const [data, setData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Fetching logic...
+  
+  return render({ data, isLoading, error, refetch });
+}
+
+// ✅ THEO CÁCH NÀY (Custom Hook Factory)
+function createAPIHook(baseUrl) {
+  return function useAPI(endpoint) {
+    const url = `${baseUrl}${endpoint}`;
+    const { data, error, isLoading, mutate } = useSWR(url, fetcher);
+    
+    // CRUD operations...
+    
+    return {
+      data,
+      error,
+      isLoading,
+      create,
+      update,
+      remove,
+    };
+  };
+}
+
+// Create specialized hooks
+const useUsers = createAPIHook('https://api.example.com');
+const useProducts = createAPIHook('https://api.example.com');
+```
+
+### 2. AI Integration
+
+#### AI-Powered Features
+
+- Integrate với AI models như OpenAI, Hugging Face
+- Sử dụng AI cho search, recommendations, content generation
+- Cân nhắc between client-side và server-side AI processing
+
+```tsx
+// ✅ THEO CÁCH NÀY (AI Integration with Next.js)
+// app/api/ai/completion/route.ts
+import OpenAI from 'openai';
+import { OpenAIStream, StreamingTextResponse } from 'ai';
+
+export async function POST(req: Request) {
+  const { prompt } = await req.json();
+  
+  const response = await openai.chat.completions.create({
+    model: 'gpt-3.5-turbo',
+    messages: [
+      { role: 'system', content: 'You are a helpful assistant.' },
+      { role: 'user', content: prompt }
+    ],
+    stream: true,
+  });
+  
+  const stream = OpenAIStream(response);
+  return new StreamingTextResponse(stream);
+}
+
+// AIAssistant.tsx (Client Component)
+function AIAssistant() {
+  const { complete, completion, isLoading } = useCompletion({
+    api: '/api/ai/completion',
+  });
+  
+  // Form and UI logic...
+}
+```
+
+#### Vector Search & Embeddings
+
+- Sử dụng vector embeddings cho semantic search
+- Implement similarity search với vector databases
+- Cân nhắc sử dụng APIs như OpenAI Embeddings
+
+```tsx
+// Generate embeddings for a text
+export async function generateEmbedding(text) {
+  const response = await openai.embeddings.create({
+    model: 'text-embedding-ada-002',
+    input: text,
+  });
+  
+  return response.data[0].embedding;
+}
+
+// Search for similar documents
+export async function searchSimilarDocuments(query, documents) {
+  const queryEmbedding = await generateEmbedding(query);
+  
+  // Calculate similarity and sort results...
+}
+```
+
+### 3. Specialized Application Types
+
+#### E-Commerce Patterns
+
+- Implement cart và checkout workflows
+- Sử dụng state machines cho complex flows
+- Design product listing và filtering systems
+
+```tsx
+// ✅ THEO CÁCH NÀY (E-commerce checkout state machine)
+const checkoutMachine = createMachine({
+  id: 'checkout',
+  initial: 'cart',
+  states: {
+    cart: {
+      on: {
+        PROCEED: { target: 'information' },
+        ADD_ITEM: { /* ... */ },
+        REMOVE_ITEM: { /* ... */ },
+      },
+    },
+    information: { /* ... */ },
+    shipping: { /* ... */ },
+    payment: { /* ... */ },
+    processing: { /* ... */ },
+    success: { type: 'final' },
+  },
+});
+
+function Checkout() {
+  const [state, send] = useMachine(checkoutMachine);
+  
+  // Render appropriate checkout step based on state
+}
+```
+
+#### Internationalization (i18n)
+
+- Sử dụng libraries như next-intl, react-i18next
+- Design workflow cho translation management
+- Support cho RTL languages
+
+```tsx
+// middleware.ts
+import createMiddleware from 'next-intl/middleware';
+
+export default createMiddleware({
+  locales: ['en', 'fr', 'es', 'ar'],
+  defaultLocale: 'en',
+});
+
+// Component usage
+function ProductPage({ product }) {
+  const t = useTranslations('Product');
+  
+  return (
+    <div>
+      <h1>{t('title', { name: product.name })}</h1>
+      <p>{t('description')}</p>
+      <p>{t('price', { price: product.price })}</p>
+      <button>{t('addToCart')}</button>
+    </div>
+  );
+}
+```
+
+## Checklist
+
+- [ ] Advanced React patterns được sử dụng khi cần thiết
+- [ ] Custom hooks factories được tạo cho reusable logic
+- [ ] Compound components được triển khai cho APIs rõ ràng
+- [ ] AI integration được triển khai (nếu cần)
+- [ ] E-commerce patterns được sử dụng (nếu áp dụng)
+- [ ] Dashboard & visualization patterns được triển khai (nếu áp dụng)
+- [ ] Internationalization được cấu hình đúng (nếu cần)
+- [ ] Vector search được triển khai cho semantic search (nếu cần)
+- [ ] Form experiences được enhance với AI (nếu có thể)
+- [ ] State machines được sử dụng cho complex flows (nếu cần) 
+
+## Liên kết đến các quy tắc khác
+
+- [frontend-master-rule.mdc](mdc:frontend-rule/.cursor/rules/frontend-master-rule.mdc)
+- [r01-code-foundation.mdc](mdc:frontend-rule/.cursor/rules/r01-code-foundation.mdc)
+- [r02-react-nextjs-architecture.mdc](mdc:frontend-rule/.cursor/rules/r02-react-nextjs-architecture.mdc)
+- [r03-typescript-code-quality.mdc](mdc:frontend-rule/.cursor/rules/r03-typescript-code-quality.mdc)
+- [r04-styling-ui-components.mdc](mdc:frontend-rule/.cursor/rules/r04-styling-ui-components.mdc)
+- [r05-state-data-management.mdc](mdc:frontend-rule/.cursor/rules/r05-state-data-management.mdc)
+- [r06-security-performance.mdc](mdc:frontend-rule/.cursor/rules/r06-security-performance.mdc)

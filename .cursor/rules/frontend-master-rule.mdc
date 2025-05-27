@@ -1,0 +1,153 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: "Tài liệu tổng quan về bộ quy tắc frontend, bao gồm mục đích, cách sử dụng, danh sách các quy tắc, và checklist theo loại dự án."
+globs: ["**/*"]
+alwaysApply: true
+priority: 1
+tags: ["documentation", "overview", "reference", "getting-started", "checklist"]
+version: "1.0.0"
+---
+
+# Frontend Rule System
+
+> Version: 1.0.0  
+> Ngày cập nhật: 2025-05-23
+
+## Giới thiệu
+
+Bộ quy tắc frontend cung cấp framework toàn diện cho phát triển ứng dụng React/Next.js hiện đại. Được thiết kế để đảm bảo tính nhất quán, hiệu quả và chất lượng cao xuyên suốt codebase.
+
+### Mục đích
+
+Bộ quy tắc này được thiết kế để:
+
+- Đảm bảo tính nhất quán trong codebase
+- Tăng tốc quá trình phát triển bằng cách cung cấp hướng dẫn rõ ràng
+- Giảm thiểu tranh luận và xung đột về coding style
+- Tạo điều kiện cho việc onboard thành viên mới
+- Duy trì chất lượng code ở mức cao
+
+## Danh sách Quy tắc
+
+| Mã | Tên | Mô tả | Ưu tiên | Áp dụng | File |
+|-----|-----|-----|-----|-----|-----|
+| R-01 | Code Foundation | Nguyên tắc cốt lõi và cấu trúc dự án | Critical | All | [r01-code-foundation.mdc](mdc:frontend-rule/.cursor/rules/r01-code-foundation.mdc) |
+| R-02 | React & NextJS Architecture | Kiến trúc component và NextJS practices | Critical | React, Next.js | [r02-react-nextjs-architecture.mdc](mdc:frontend-rule/.cursor/rules/r02-react-nextjs-architecture.mdc) |
+| R-03 | TypeScript & Code Quality | TypeScript, testing và code quality | Critical | TypeScript | [r03-typescript-code-quality.mdc](mdc:frontend-rule/.cursor/rules/r03-typescript-code-quality.mdc) |
+| R-04 | Styling & UI Components | CSS, UI frameworks và accessibility | Important | React, Next.js | [r04-styling-ui-components.mdc](mdc:frontend-rule/.cursor/rules/r04-styling-ui-components.mdc) |
+| R-05 | State & Data Management | State management và xử lý dữ liệu | Important | React, Next.js | [r05-state-data-management.mdc](mdc:frontend-rule/.cursor/rules/r05-state-data-management.mdc) |
+| R-06 | Security & Performance | Bảo mật, hiệu suất và error handling | Critical | All | [r06-security-performance.mdc](mdc:frontend-rule/.cursor/rules/r06-security-performance.mdc) |
+| R-07 | Advanced Patterns & AI | Extensions và AI integration | Nice-to-have | Project-specific | [r07-advanced-patterns-ai.mdc](mdc:frontend-rule/.cursor/rules/r07-advanced-patterns-ai.mdc) |
+
+## Mức độ ưu tiên
+
+Mỗi quy tắc được phân loại theo mức độ ưu tiên:
+
+- **Critical**: Bắt buộc tuân thủ, ảnh hưởng trực tiếp đến chất lượng và bảo mật
+- **Important**: Nên tuân thủ trong hầu hết các trường hợp
+- **Nice-to-have**: Khuyến khích áp dụng khi có thể
+
+## Quy trình áp dụng
+
+1. **Tìm hiểu quy tắc cốt lõi trước**: Bắt đầu với R-01, R-02, R-03
+2. **Áp dụng theo loại dự án**: Chọn thêm quy tắc phù hợp với framework/công nghệ sử dụng
+3. **Tích hợp vào workflow**: Thiết lập linters, code formatting và quy trình kiểm tra
+4. **Đánh giá định kỳ**: Đánh giá và điều chỉnh quy tắc theo nhu cầu thực tế của dự án
+
+## Cách sử dụng bộ quy tắc
+
+1. **Đọc tổng quan**: File này cung cấp tổng quan về toàn bộ quy tắc
+2. **Đọc chi tiết**: Tham khảo từng file quy tắc riêng biệt để biết chi tiết
+3. **Sử dụng checklist**: Mỗi quy tắc có phần Checklist để kiểm tra việc áp dụng
+4. **Áp dụng theo ngữ cảnh**: Không phải mọi quy tắc đều áp dụng cho mọi dự án, hãy linh hoạt
+
+## Checklist theo loại dự án
+
+### SPA (Single Page Application)
+
+- [ ] **Routing**
+  - [ ] Routing library được thiết lập (React Router, TanStack Router)
+  - [ ] Lazy loading routes cho code splitting
+  - [ ] Protected routes cho authentication
+  
+- [ ] **State Management**
+  - [ ] Global store cho data được thiết lập (Zustand, Redux, Context)
+  - [ ] Caching strategy cho API calls
+  
+- [ ] **Performance**
+  - [ ] Code splitting theo route/feature
+  - [ ] Image optimization
+  - [ ] Virtualization cho danh sách dài
+
+### Server-side Rendered (Next.js App Router)
+
+- [ ] **Routing & Rendering**
+  - [ ] Cấu trúc thư mục app/ theo chuẩn Next.js
+  - [ ] Phân chia Server vs Client Components đúng
+  - [ ] Error và loading handling cho từng route
+  
+- [ ] **Data Fetching**
+  - [ ] Server Components fetch data trực tiếp
+  - [ ] Cache và revalidation được cấu hình đúng
+  - [ ] Route handlers cho API endpoints
+  
+- [ ] **Optimization**
+  - [ ] Metadata được thiết lập đúng
+  - [ ] Image optimization với next/image
+  - [ ] Font optimization với next/font
+
+### E-commerce
+
+- [ ] **Product Management**
+  - [ ] Product schema & types
+  - [ ] Category navigation
+  - [ ] Search và filtering
+  
+- [ ] **Cart & Checkout**
+  - [ ] Cart state persistence
+  - [ ] Multi-step checkout process
+  - [ ] Form validation
+  
+- [ ] **Payment Integration**
+  - [ ] Payment gateway integration
+  - [ ] Secure checkout
+
+### Dashboard / Admin Panel
+
+- [ ] **Layout & Navigation**
+  - [ ] Responsive sidebar/navigation
+  - [ ] Context-aware navigation
+  
+- [ ] **Data Display**
+  - [ ] Tables với pagination, sorting, filtering
+  - [ ] Charts & graphs
+  - [ ] Real-time updates
+  
+- [ ] **Authentication & Authorization**
+  - [ ] Role-based permissions
+  - [ ] Activity logs
+
+## Quy trình triển khai dự án
+
+1. **Khởi tạo dự án**
+   - [ ] Chọn project type (SPA, SSR, etc.)
+   - [ ] Thiết lập cấu trúc thư mục theo R-01
+   - [ ] Cấu hình TypeScript theo R-03
+
+2. **Phát triển**
+   - [ ] Component architecture tuân thủ R-02
+   - [ ] State management theo R-05
+   - [ ] Error handling theo R-06
+
+3. **Kiểm thử**
+   - [ ] Unit tests cho components và utilities
+   - [ ] Integration tests cho features
+   - [ ] Performance testing
+
+4. **Triển khai**
+   - [ ] CI/CD pipeline setup
+   - [ ] Monitoring và analytics 
